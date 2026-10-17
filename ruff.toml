@@ -1,0 +1,6 @@
+line-length = 110
+
+[lint]
+select = ["E", "F", "I", "B"]
+# la pagina HTML inline contiene righe lunghe di CSS/JS
+ignore = ["E501"]
