@@ -22,8 +22,6 @@ app = FastAPI(title=APP_TITLE)
 REQUESTS = Counter("http_requests_total", "Richieste HTTP", ["method", "path", "status"])
 NOTES_CREATED = Counter("notes_created_total", "Note create")
 
-_schema_ready = False
-
 
 # ---------------------------------------------------------------- database
 def dsn() -> str:
@@ -45,9 +43,7 @@ def connect():
 
 def ensure_schema() -> None:
     # Per una demo basta questo. In produzione useresti migrazioni (Alembic, Flyway...).
-    global _schema_ready
-    if _schema_ready:
-        return
+    # Niente cache in memoria: se il database viene ricreato vuoto, la tabella torna da sola.
     with connect() as conn:
         conn.execute(
             "CREATE TABLE IF NOT EXISTS notes ("
@@ -55,7 +51,6 @@ def ensure_schema() -> None:
             "text TEXT NOT NULL, "
             "created_at TIMESTAMPTZ NOT NULL DEFAULT now())"
         )
-    _schema_ready = True
 
 
 def check_db() -> None:

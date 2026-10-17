@@ -62,3 +62,30 @@ def test_pagina_html():
     r = client.get("/")
     assert r.status_code == 200
     assert main.APP_TITLE in r.text
+
+
+def test_schema_ricreato_se_il_db_viene_ricreato(monkeypatch):
+    """Regressione: ensure_schema() non deve ricordare in memoria che la tabella esiste.
+
+    Se il database viene ricreato vuoto mentre l'app gira, la CREATE TABLE deve
+    essere eseguita di nuovo, altrimenti /api/notes risponde 503 per sempre.
+    """
+    eseguite = []
+
+    class FakeConn:
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *exc):
+            return False
+
+        def execute(self, sql, *args):
+            eseguite.append(sql)
+
+    monkeypatch.setattr(main, "connect", lambda: FakeConn())
+
+    main.ensure_schema()
+    main.ensure_schema()  # secondo giro: come dopo la ricreazione del DB
+
+    creazioni = [q for q in eseguite if "CREATE TABLE IF NOT EXISTS notes" in q]
+    assert len(creazioni) == 2
